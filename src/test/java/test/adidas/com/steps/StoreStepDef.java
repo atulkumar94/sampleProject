@@ -12,13 +12,13 @@ import net.serenitybdd.screenplay.waits.WaitUntil;
 import net.thucydides.core.annotations.Managed;
 import test.adidas.com.pages.CartPage;
 import test.adidas.com.pages.HomePage;
-import test.adidas.com.pages.ProductPage;
 import test.adidas.com.tasks.AddToCart;
 import test.adidas.com.tasks.NavigateToCategory;
 import test.adidas.com.tasks.PlaceOrderFormFill;
 
 import static net.serenitybdd.screenplay.actors.OnStage.theActorInTheSpotlight;
 import static net.serenitybdd.screenplay.matchers.WebElementStateMatchers.isVisible;
+import static net.serenitybdd.screenplay.matchers.WebElementStateMatchers.isNotVisible;
 
 import org.junit.Assert;
 import org.openqa.selenium.WebDriver;
@@ -59,14 +59,24 @@ public class StoreStepDef {
 	@When("user adds {string} to cart")
 	public void user_adds_to_cart(String string) {
 		theActorInTheSpotlight().attemptsTo(new AddToCart(string));
-		expectedPrices += Integer.parseInt(
-				ProductPage.productPrice.resolveFor(theActorInTheSpotlight()).getText().replaceAll("[^\\d]", ""));
 		homepage.open();
 	}
 
 	@When("user navigates to cart page")
 	public void user_navigates_to() {
 		theActorInTheSpotlight().attemptsTo(new NavigateToCategory("Cart"));
+	}
+
+	@And("^user deletes the \"([^\"]*)\" item from cart$")
+	public void userDeletesTheSomethingItemFromCart(String item) {
+		theActorInTheSpotlight().attemptsTo(WaitUntil.the(CartPage.deleteItem(item), isVisible()),
+				Click.on(CartPage.deleteItem(item)), WaitUntil.the(CartPage.deleteItem(item), isNotVisible()),
+				WaitUntil.the(CartPage.itemPrice, isVisible()));
+		int items = CartPage.itemPrice.resolveAllFor(theActorInTheSpotlight()).size();
+		for (int i = 0; i < items; i++) {
+			expectedPrices += Integer
+					.parseInt(CartPage.itemPrice.resolveAllFor(theActorInTheSpotlight()).get(i).getText());
+		}
 	}
 
 	@When("user clicks on place order in cart page")
